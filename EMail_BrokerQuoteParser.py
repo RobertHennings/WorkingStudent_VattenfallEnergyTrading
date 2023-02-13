@@ -16,13 +16,14 @@ import re
 
 file = "/Users/Robert_Hennings/Dokumente/Uni/MusterBewerbung/MeineArbeitgeber/Vattenfall/BrokerQuotesExample.txt"
 
-text = pd.read_table(file, header=None,names=["Dat"], dtype={"Dat": "string"})
-text = text.loc[2:]
-text.reset_index(inplace=True, drop=True)
-
 
 
 def parse_Email_text(text):
+    text = pd.read_table(file, header=None,names=["Dat"], dtype={"Dat": "string"})
+    date = text.loc[0][0]
+    text = text.loc[2:]
+    text.reset_index(inplace=True, drop=True)
+    
     # Now parse the information accordingly, separate first part that states the Hedges from the rest
     df_hedges = pd.DataFrame()
     df_quotes = pd.DataFrame()
@@ -56,6 +57,7 @@ def parse_Email_text(text):
     
     
     df_hedges_cleaned.columns = ["Product", "P1", "P2", "P3"]
+    df_hedges_cleaned.insert(0, "Date", date)
     
     for line in range(df_quotes.shape[0]):
         list_ws = find_whitespaces(df_quotes.loc[line, :][0])
@@ -77,7 +79,6 @@ def parse_Email_text(text):
             df_quotes_cleaned.iloc[line, 8] = df_temp3.TTF7_1 # L3_Price
             df_quotes_cleaned.iloc[line, 9] = df_temp.iloc[0,5] # Ratio
         
-        
         else: # normal variant that has to be splitted into pieces 
             df_temp = df_quotes.loc[1].str[list_ws[1]:].str.split(" ", expand=True).add_prefix("Norm_").drop(["Norm_0", "Norm_2", "Norm_4"], axis=1)
             df_temp2 = df_temp.Norm_5.str.split("@", expand=True).add_prefix("Norm5_")
@@ -90,10 +91,12 @@ def parse_Email_text(text):
             df_quotes_cleaned.iloc[line, 5] = df_temp2.Norm5_1
             df_quotes_cleaned.iloc[line, 9] = df_temp.iloc[0,3]
     
-
+    
+    df_quotes_cleaned.insert(0, "Date", date)
+    
     return df_hedges_cleaned, df_quotes_cleaned
 
-df1, df2 = parse_Email_text(text = text)
+df1, df2 = parse_Email_text(text = file)
 df1
 df2
 
